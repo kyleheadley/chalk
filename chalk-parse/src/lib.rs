@@ -1,5 +1,12 @@
 #![recursion_limit = "1024"]
+#![feature(rustc_private)]
 
+extern crate getopts;
+extern crate rustc;
+extern crate rustc_driver;
+extern crate rustc_errors;
+extern crate syntax;
+extern crate syntax_pos;
 #[macro_use]
 extern crate error_chain;
 
@@ -9,6 +16,7 @@ extern crate lalrpop_util;
 pub mod ast;
 pub mod errors;
 mod parser;
+mod rustc_parser;
 
 use errors::Result;
 use lalrpop_util::ParseError;
@@ -16,6 +24,13 @@ use std::fmt::Write;
 
 pub fn parse_program(text: &str) -> Result<ast::Program> {
     match parser::parse_Program(text) {
+        Ok(v) => Ok(v),
+        Err(e) => bail!("parse error: {:?}", e),
+    }
+}
+
+pub fn parse_file(filename: String) -> Result<ast::Program> {
+    match rustc_parser::parse_file(filename) {
         Ok(v) => Ok(v),
         Err(e) => bail!("parse error: {:?}", e),
     }

@@ -39,6 +39,13 @@ impl Program {
         let env = Arc::new(ir.environment());
         Ok(Program { text, ir, env })
     }
+    fn newr(filename: String) -> Result<Program> {
+        let mut text = String::new();
+        File::open(&filename)?.read_to_string(&mut text)?;
+        let ir = Arc::new(chalk_parse::parse_file(filename)?.lower()?);
+        let env = Arc::new(ir.environment());
+        Ok(Program { text, ir, env })
+    }
 }
 
 quick_main!(run);
@@ -85,6 +92,9 @@ fn process(command: &str, rl: &mut rustyline::Editor<()>, prog: &mut Option<Prog
         let mut text = String::new();
         File::open(filename)?.read_to_string(&mut text)?;
         *prog = Some(Program::new(text)?);
+    } else if command.starts_with("loadr ") {
+        let filename = &command["loadr ".len()..];
+        *prog = Some(Program::newr(String::from(filename))?);
     } else {
         let prog = prog.as_ref().ok_or("no program currently loaded")?;
         ir::set_current_program(&prog.ir, || -> Result<()> {
@@ -104,7 +114,8 @@ fn help() {
     println!("Commands:");
     println!("  help         print this output");
     println!("  program      provide a program via stdin");
-    println!("  load <file>  load program from <file>");
+    println!("  load <file>  load chalk program from <file>");
+    println!("  loadr <file> load rust program from <file>");
     println!("  print        print the current program");
     println!("  lowered      print the lowered program");
     println!("  <goal>       attempt to solve <goal>");
